@@ -57,14 +57,7 @@ class AudioPlayer:
     def __init__(self):
         self.audio_interface = pyaudio.PyAudio()
         self.input_audio_queue = queue.Queue()
-        self.output_audio_queue = queue.Queue()
-        self.output_stream = None
         self.is_playing = False
-        self.sample_rate = 8000
-        self.channels = 1
-        self.format = pyaudio.paInt16
-        self.decoder = MuLawDecoder()
-        self.chunk_size = 160  # Twilio's chunk size
         
         # For recording functionality
         self.recording = False
@@ -72,18 +65,7 @@ class AudioPlayer:
         
     def start_stream(self):
         logger.info("Starting audio stream...")
-        self.output_stream = self.audio_interface.open(
-            format=self.format,
-            channels=self.channels,
-            rate=self.sample_rate,
-            output=True,
-            frames_per_buffer=self.chunk_size
-        )
-
-        self.output_stream.start_stream()
-
         self.is_playing = True
-        logger.info("Audio stream started successfully")
 
     def generator(self):
         while self.is_playing:
@@ -103,10 +85,8 @@ class AudioPlayer:
 
             yield b"".join(data)
     
-    def add_audio(self, audio_data):
+    def add_input_audio_chunk(self, pcm_data):
         try:
-            # Decode mu-law data
-            pcm_data = self.decoder.decode(audio_data)
             # Add to queue for playback
             self.input_audio_queue.put(pcm_data)
             # Store for recording if needed
@@ -147,7 +127,5 @@ class AudioPlayer:
         
     def cleanup(self):
         logger.info("Cleaning up audio resources...")
-        if self.output_stream:
-            self.output_stream.stop_stream()
-            self.output_stream.close()
+        self.is_playing = False
         self.audio_interface.terminate()
