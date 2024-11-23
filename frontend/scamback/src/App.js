@@ -25,7 +25,7 @@ function App() {
 
       try {
         // Simulate a queued state transition
-        setTimeout(() => setCallState("ringing"), 200);
+        setTimeout(() => setCallState("ringing"), 20);
 
         // Simulate ringing and transition to in-progress
         setTimeout(async () => {
@@ -94,7 +94,7 @@ function App() {
             <p>Phone Number: {phoneNumber}</p>
             {audioUrl && (
               <div className="audio-section">
-                <h2>Call Audio</h2>
+                {/* <h2>Call Audio</h2> */}
                 <audio autoPlay src={audioUrl} />
               </div>
             )}
