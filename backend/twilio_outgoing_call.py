@@ -11,7 +11,6 @@ load_dotenv(dotenv_path, override=True)
 # and set the environment variables. See http://twil.io/secure
 account_sid = os.environ.get("TWILIO_ACCOUNT_SID")
 auth_token = os.environ.get("TWILIO_AUTH_TOKEN")
-from_number = os.environ.get("TWILIO_PHONE_NUMBER")
 
 client = Client(account_sid, auth_token)
 
