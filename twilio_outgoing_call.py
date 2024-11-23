@@ -27,6 +27,8 @@ print(f"Call SID: {call_sid}")
 while True:
     call_status = client.calls(call_sid).fetch()
     print(f"Call Status: {call_status.status}")
+    if call_status.status == "completed":
+        break
 
     # Wait for a few seconds before checking again
     time.sleep(2)
