@@ -1,0 +1,2 @@
+# Scamback
+Scamback is a fun and innovative app designed to waste the time of scam callers. Instead of ignoring them, the app cleverly engages scammers with AI-generated scripts, witty responses, or endless loops of convincing chatter—giving them a taste of their own medicine!
