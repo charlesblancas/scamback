@@ -7,6 +7,7 @@ from response_generation.speech_to_text import start_speech_to_text
 from player import AudioPlayer, MuLawDecoder, MuLawEncoder
 from threading import Thread
 import requests
+import numpy as np
 
 HTTP_SERVER_PORT = 5770
 
@@ -63,12 +64,12 @@ def received_text(text, ws):
         logger.info("TTS API response 200 received")
         # Play the audio on the call
         chunk = response.json()["audio"]
-        #decode base64
-        decoded_chunk = base64.b64decode(chunk)
-        mu_law_encoded_chunk = encoder.encode_array(decoded_chunk)
-        chunk_to_send = base64.b64encode(mu_law_encoded_chunk).decode("utf-8")
-        ws.send(json.dumps({"event": "media", "streamSid": sid, "media": {"payload": chunk_to_send}}))
+
         # Encode the audio in x-mulaw format
+        decoded_chunk = np.frombuffer(base64.b64decode(chunk), dtype=np.int16) # Base64 string to pcm 16-bit numpy
+        mu_law_encoded_chunk = encoder.encode_array(decoded_chunk) # pcm 16-bit to mulaw
+        chunk_to_send = base64.b64encode(mu_law_encoded_chunk).decode("utf-8") # mulaw to base64 string
+        ws.send(json.dumps({"event": "media", "streamSid": sid, "media": {"payload": chunk_to_send}}))
 
 if __name__ == '__main__':
     try:
