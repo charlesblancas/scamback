@@ -54,10 +54,13 @@ class MuLawDecoder:
         return pcm_data.tobytes()
 
 class AudioPlayer:
-    def __init__(self):
+    def __init__(self, sample_rate = 8000, sample_width = 2, channels = 1):
         self.audio_interface = pyaudio.PyAudio()
         self.input_audio_queue = queue.Queue()
         self.is_playing = False
+        self.sample_rate = sample_rate
+        self.sample_width = 2
+        self.channels = 1
         
         # For recording functionality
         self.recording = False
@@ -117,7 +120,7 @@ class AudioPlayer:
         try:
             with wave.open(filename, 'wb') as wf:
                 wf.setnchannels(self.channels)
-                wf.setsampwidth(self.p.get_sample_size(self.format))
+                wf.setsampwidth(self.sample_width)
                 wf.setframerate(self.sample_rate)
                 wf.writeframes(b''.join(self.recorded_frames))
             
