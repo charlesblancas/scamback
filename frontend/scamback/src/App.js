@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPhone, faPhoneSlash } from "@fortawesome/free-solid-svg-icons";
 import "./App.css";
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPhoneSlash } from '@fortawesome/free-solid-svg-icons';
 
 function App() {
   const [stage, setStage] = useState("idle"); // Stages: idle, summary
@@ -12,7 +12,6 @@ function App() {
   const [savedTranscript, setSavedTranscript] = useState([]);
   const [savedAudioUrl, setSavedAudioUrl] = useState(null);
 
-  // Set document title on component mount
   useEffect(() => {
     document.title = "Scamback";
   }, []);
@@ -22,28 +21,28 @@ function App() {
       setStage("in-progress");
       setCallState("queued");
       setPhoneNumber("+1-800-SCAMMER"); // Example: Dynamic number from API
-
+      setTranscript([]);
+  
       try {
         // Simulate a queued state transition
-        setTimeout(() => setCallState("ringing"), 200); // Shortened ringing timeout to 200ms
-
+        setTimeout(() => setCallState("ringing"), 200);
+  
         // Simulate ringing and transition to in-progress
         setTimeout(async () => {
           setCallState("in-progress");
-
-          // Simulate API fetching for audio and transcript streams
+  
           const audioResponse = await fetch("http://localhost:5000/call/audio");
           const transcriptResponse = await fetch("http://localhost:5000/call/transcript");
-
+  
           if (!audioResponse.ok || !transcriptResponse.ok) {
             throw new Error("Failed to fetch call streams.");
           }
-
+  
           const audioBlob = await audioResponse.blob();
           const transcriptStream = transcriptResponse.body.getReader();
-
+  
           setAudioUrl(URL.createObjectURL(audioBlob));
-
+  
           // Read and display transcript
           const decoder = new TextDecoder("utf-8");
           let done = false;
@@ -66,7 +65,6 @@ function App() {
       setSavedTranscript(transcript);
       setAudioUrl(null);
       setTranscript([]);
-      setPhoneNumber("");
     } else if (stage === "summary") {
       // Reset to idle
       setStage("idle");
@@ -75,7 +73,7 @@ function App() {
       setSavedTranscript([]);
     }
   };
-
+  
   return (
     <div className="App">
       <header className="App-header">
@@ -83,7 +81,7 @@ function App() {
           <>
             <h1>Scamback</h1>
             <button className="call-button" onClick={handleCall}>
-              📞 Call a Scammer
+              <FontAwesomeIcon icon={faPhone} /> Call a Scammer
             </button>
           </>
         )}
@@ -93,10 +91,7 @@ function App() {
             <h1>Call in Progress</h1>
             <p>Phone Number: {phoneNumber}</p>
             {audioUrl && (
-              <div className="audio-section">
-                {/* <h2>Call Audio</h2> */}
-                <audio autoPlay src={audioUrl} />
-              </div>
+              <audio autoPlay src={audioUrl} />
             )}
             <div className="transcript-section">
               <h2>Transcript</h2>
@@ -107,7 +102,7 @@ function App() {
               </div>
             </div>
             <button className="call-button hangup" onClick={handleCall}>
-              <FontAwesomeIcon icon={faPhoneSlash} size="sm" /> Hang Up
+              <FontAwesomeIcon icon={faPhoneSlash} /> Hang Up
             </button>
           </>
         )}
@@ -115,6 +110,7 @@ function App() {
         {stage === "summary" && (
           <>
             <h1>Call Summary</h1>
+            <p>Phone Number: {phoneNumber}</p>
             <div className="audio-section">
               <h2>Call Audio</h2>
               {savedAudioUrl && <audio controls src={savedAudioUrl} />}
@@ -144,7 +140,7 @@ function App() {
               </a>
             </div>
             <button className="call-button" onClick={handleCall}>
-              📞 Call Another Scammer
+              <FontAwesomeIcon icon={faPhone} /> Call Another Scammer
             </button>
           </>
         )}
