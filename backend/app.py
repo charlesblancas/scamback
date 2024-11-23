@@ -4,7 +4,7 @@ import logging
 from flask import Flask
 import flask_sockets
 from response_generation.speech_to_text import start_speech_to_text
-from player import AudioPlayer
+from player import AudioPlayer, MuLawDecoder
 from threading import Thread
 
 HTTP_SERVER_PORT = 5770
@@ -19,6 +19,8 @@ audio_player = AudioPlayer()
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 speech2text = None # To init later as Thread
+
+decoder = MuLawDecoder()
 
 @sockets.route('/media', websocket=True)
 def echo(ws):
@@ -39,7 +41,7 @@ def echo(ws):
             if data['event'] == "media":
                 payload = data['media']['payload']
                 chunk = base64.b64decode(payload)
-                audio_player.add_audio(chunk)
+                audio_player.add_input_audio_chunk(decoder.decode(chunk))
             
     except Exception as e:
         logger.error(f"Error in WebSocket handling: {e}", exc_info=True)
