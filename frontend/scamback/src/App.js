@@ -35,18 +35,18 @@ function App() {
           // Simulate API fetching for streams
           const audioResponse = await fetch("/call/audio");
           const transcriptResponse = await fetch("/call/transcript");
-          const videoResponse = await fetch("/call/video");
+          // const videoResponse = await fetch("/call/video"); // Commented out video
 
-          if (!audioResponse.ok || !transcriptResponse.ok || !videoResponse.ok) {
+          if (!audioResponse.ok || !transcriptResponse.ok /* || !videoResponse.ok*/) { // Commented out video check
             throw new Error("Failed to fetch call streams.");
           }
 
           const audioBlob = await audioResponse.blob();
-          const videoBlob = await videoResponse.blob();
+          // const videoBlob = await videoResponse.blob(); // Commented out video
           const transcriptStream = transcriptResponse.body.getReader();
 
           setAudioUrl(URL.createObjectURL(audioBlob));
-          setCallerVideoUrl(URL.createObjectURL(videoBlob));
+          // setCallerVideoUrl(URL.createObjectURL(videoBlob)); // Commented out video
 
           // Read and display transcript
           const decoder = new TextDecoder("utf-8");
@@ -97,12 +97,13 @@ function App() {
           <>
             <h1>Call in Progress</h1>
             <p>Phone Number: {phoneNumber}</p>
-            {callerVideoUrl && (
+            {/* Commented out the video section */}
+            {/* {callerVideoUrl && (
               <div className="video-section">
                 <h2>Caller Video</h2>
                 <video autoPlay src={callerVideoUrl} />
               </div>
-            )}
+            )} */}
             {audioUrl && (
               <div className="audio-section">
                 <h2>Call Audio</h2>
