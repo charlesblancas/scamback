@@ -1,4 +1,4 @@
-from queue import Queue, Empty
+from six.moves import queue
 import numpy as np
 from datetime import datetime
 import pyaudio
@@ -55,9 +55,10 @@ class MuLawDecoder:
 
 class AudioPlayer:
     def __init__(self):
-        self.audio_queue = Queue()
-        self.p = pyaudio.PyAudio()
-        self.stream = None
+        self.audio_interface = pyaudio.PyAudio()
+        self.input_audio_queue = queue.Queue()
+        self.output_audio_queue = queue.Queue()
+        self.output_stream = None
         self.is_playing = False
         self.sample_rate = 8000
         self.channels = 1
@@ -71,50 +72,33 @@ class AudioPlayer:
         
     def start_stream(self):
         logger.info("Starting audio stream...")
-        self.stream = self.p.open(
+        self.output_stream = self.audio_interface.open(
             format=self.format,
             channels=self.channels,
             rate=self.sample_rate,
             output=True,
-            frames_per_buffer=self.chunk_size,
-            stream_callback=self.callback
+            frames_per_buffer=self.chunk_size
         )
-        self.stream.start_stream()
+
+        self.output_stream.start_stream()
+
         self.is_playing = True
         logger.info("Audio stream started successfully")
-        
-    # def callback(self, in_data, frame_count, time_info, status):
-    #     try:
-    #         # Get data from queue
-    #         data = self.audio_queue.get_nowait()
-    #         return (data, pyaudio.paContinue)
-    #     except:
-    #         # Return silence if no data available
-    #         silence = b'\x00' * (frame_count * 2)  # 2 bytes per sample for 16-bit audio
-    #         return (silence, pyaudio.paContinue)
 
     def generator(self):
-        while self.stream.is_active:
-            """
-            Use a blocking get() to ensure there's at least one chunk of
-            data, and stop iteration if the chunk is None, indicating the
-            end of the audio stream.
-            """
-            chunk = self.audio_queue.get()
+        while self.is_playing:
+            chunk = self.input_audio_queue.get()
             if chunk is None:
                 return
             data = [chunk]
 
-            """
-            Now consume whatever other data's still buffered.
-            """
             while True:
                 try:
-                    chunk = self.audio_queue.get(block=False)
+                    chunk = self.input_audio_queue.get(block=False)
                     if chunk is None:
                         return
                     data.append(chunk)
-                except Empty:
+                except queue.Empty:
                     break
 
             yield b"".join(data)
@@ -124,7 +108,7 @@ class AudioPlayer:
             # Decode mu-law data
             pcm_data = self.decoder.decode(audio_data)
             # Add to queue for playback
-            self.audio_queue.put(pcm_data)
+            self.input_audio_queue.put(pcm_data)
             # Store for recording if needed
             if self.recording:
                 self.recorded_frames.append(pcm_data)
@@ -163,7 +147,7 @@ class AudioPlayer:
         
     def cleanup(self):
         logger.info("Cleaning up audio resources...")
-        if self.stream:
-            self.stream.stop_stream()
-            self.stream.close()
-        self.p.terminate()
+        if self.output_stream:
+            self.output_stream.stop_stream()
+            self.output_stream.close()
+        self.audio_interface.terminate()

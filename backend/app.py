@@ -5,6 +5,7 @@ from flask import Flask
 import flask_sockets
 from response_generation.speech_to_text import start_speech_to_text
 from player import AudioPlayer
+from threading import Thread
 
 HTTP_SERVER_PORT = 5770
 
@@ -17,13 +18,15 @@ sockets = flask_sockets.Sockets(app)
 audio_player = AudioPlayer()
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+speech2text = None # To init later as Thread
 
 @sockets.route('/media', websocket=True)
 def echo(ws):
     logger.info("WebSocket connection accepted")
     audio_player.start_stream()
     audio_player.start_recording()
-    start_speech_to_text(audio_player.stream, received_text)
+    speech2text = Thread(target=start_speech_to_text, args=(audio_player, received_text))
+    speech2text.start()
 
     try:
         while not ws.closed:
@@ -59,3 +62,4 @@ if __name__ == '__main__':
         logger.error(f"Server error: {e}", exc_info=True)
     finally:
         audio_player.cleanup()
+        speech2text.join()

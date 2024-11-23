@@ -8,7 +8,7 @@ from .chat import chat_with_edna
 load_dotenv(".env")
 access_token = os.environ.get("REV_AI_TOKEN")
 
-def start_speech_to_text(audio_stream, callback):
+def start_speech_to_text(audio_player, callback):
     """
     Creates a media config with the settings set for a raw microphone input
     """
@@ -20,7 +20,7 @@ def start_speech_to_text(audio_stream, callback):
         """
         Starts the server connection and thread sending microphone audio
         """
-        response_gen = streamclient.start(audio_stream.generator())
+        response_gen = streamclient.start(audio_player.generator())
 
         """
         Iterates through responses and prints them
