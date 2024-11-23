@@ -12,6 +12,7 @@ from queue import Queue
 import numpy as np
 import array
 from scipy import signal
+from response_generation.speech_to_text import speech_to_text
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -156,6 +157,7 @@ class AudioPlayer:
             self.stream.close()
         self.p.terminate()
 
+
 app = Flask(__name__)
 sockets = flask_sockets.Sockets(app)
 audio_player = AudioPlayer()
@@ -168,6 +170,7 @@ def echo(ws):
     audio_player.start_recording()
     
     try:
+        #speech_to_text(audio_player.stream)
         while not ws.closed:
             message = ws.receive()
             if message is None:
