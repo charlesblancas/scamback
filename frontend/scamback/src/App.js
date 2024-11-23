@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPhoneSlash } from '@fortawesome/free-solid-svg-icons';
 
 function App() {
-  const [stage, setStage] = useState("idle"); // Stages: idle, summary, in-progress
+  const [stage, setStage] = useState("idle"); // Stages: idle, summary
   const [callState, setCallState] = useState(null); // Call states: queued, ringing, in-progress, completed
   const [audioUrl, setAudioUrl] = useState(null);
   const [transcript, setTranscript] = useState([]);
@@ -25,13 +25,13 @@ function App() {
 
       try {
         // Simulate a queued state transition
-        setTimeout(() => setCallState("ringing"), 20);
+        setTimeout(() => setCallState("ringing"), 200); // Shortened ringing timeout to 200ms
 
         // Simulate ringing and transition to in-progress
         setTimeout(async () => {
           setCallState("in-progress");
 
-          // Simulate API fetching for streams
+          // Simulate API fetching for audio and transcript streams
           const audioResponse = await fetch("http://localhost:5000/call/audio");
           const transcriptResponse = await fetch("http://localhost:5000/call/transcript");
 
@@ -54,7 +54,7 @@ function App() {
               setTranscript((prev) => [...prev, decoder.decode(value)]);
             }
           }
-        }, 5000); // Ringing for 3 seconds before call starts
+        }, 2000); // Ringing for 200ms before call starts
       } catch (error) {
         console.error(error.message);
       }
@@ -107,7 +107,7 @@ function App() {
               </div>
             </div>
             <button className="call-button hangup" onClick={handleCall}>
-              <FontAwesomeIcon icon={faPhoneSlash} size="lg" /> Hang Up
+              <FontAwesomeIcon icon={faPhoneSlash} size="sm" /> Hang Up
             </button>
           </>
         )}
@@ -118,6 +118,13 @@ function App() {
             <div className="audio-section">
               <h2>Call Audio</h2>
               {savedAudioUrl && <audio controls src={savedAudioUrl} />}
+              <a
+                href={savedAudioUrl}
+                download="call_audio.mp3"
+                className="download-button"
+              >
+                Download
+              </a>
             </div>
             <div className="transcript-section">
               <h2>Transcript</h2>
@@ -126,6 +133,15 @@ function App() {
                   <p key={index}>{line}</p>
                 ))}
               </div>
+              <a
+                href={`data:text/plain;charset=utf-8,${encodeURIComponent(
+                  savedTranscript.join("\n")
+                )}`}
+                download="call_transcript.txt"
+                className="download-button"
+              >
+                Download
+              </a>
             </div>
             <button className="call-button" onClick={handleCall}>
               📞 Call Another Scammer

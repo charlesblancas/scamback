@@ -50,9 +50,27 @@ h1 {
   border-radius: 5px;
   max-height: 200px;
   overflow-y: auto;
+  text-align: left; /* Align transcript text to the left */
 }
 
 .transcript-box p {
   margin: 5px 0;
   color: #61dafb;
+}
+
+.download-button {
+  display: inline-block;
+  margin-top: 10px;
+  color: #61dafb;
+  background-color: transparent;
+  border: 1px solid #61dafb;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  text-decoration: none;
+  border-radius: 5px;
+}
+
+.download-button:hover {
+  background-color: #61dafb;
+  color: #282c34;
 }
