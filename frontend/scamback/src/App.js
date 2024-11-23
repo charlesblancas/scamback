@@ -1,92 +1,147 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./App.css";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPhoneSlash } from '@fortawesome/free-solid-svg-icons';
 
 function App() {
-  const [callStatus, setCallStatus] = useState("");
+  const [stage, setStage] = useState("idle"); // Stages: idle, summary, in-progress
+  const [callState, setCallState] = useState(null); // Call states: queued, ringing, in-progress, completed
   const [audioUrl, setAudioUrl] = useState(null);
   const [transcript, setTranscript] = useState([]);
-  const [isCalling, setIsCalling] = useState(false);
+  const [callerVideoUrl, setCallerVideoUrl] = useState(null);
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [savedTranscript, setSavedTranscript] = useState([]);
+  const [savedAudioUrl, setSavedAudioUrl] = useState(null);
 
+  // Set document title on component mount
   useEffect(() => {
-    document.title = 'Scamback';
+    document.title = "Scamback";
   }, []);
 
   const handleCall = async () => {
-    if (isCalling) {
-      // Handle hang-up action
-      setIsCalling(false);
-      setCallStatus("Call ended.");
+    if (stage === "idle") {
+      setStage("in-progress");
+      setCallState("queued");
+      setPhoneNumber("+1-800-SCAMMER"); // Example: Dynamic number from API
+
+      try {
+        // Simulate a queued state transition
+        setTimeout(() => setCallState("ringing"), 2000);
+
+        // Simulate ringing and transition to in-progress
+        setTimeout(async () => {
+          setCallState("in-progress");
+
+          // Simulate API fetching for streams
+          const audioResponse = await fetch("/call/audio");
+          const transcriptResponse = await fetch("/call/transcript");
+          const videoResponse = await fetch("/call/video");
+
+          if (!audioResponse.ok || !transcriptResponse.ok || !videoResponse.ok) {
+            throw new Error("Failed to fetch call streams.");
+          }
+
+          const audioBlob = await audioResponse.blob();
+          const videoBlob = await videoResponse.blob();
+          const transcriptStream = transcriptResponse.body.getReader();
+
+          setAudioUrl(URL.createObjectURL(audioBlob));
+          setCallerVideoUrl(URL.createObjectURL(videoBlob));
+
+          // Read and display transcript
+          const decoder = new TextDecoder("utf-8");
+          let done = false;
+          while (!done) {
+            const { value, done: streamDone } = await transcriptStream.read();
+            done = streamDone;
+            if (value) {
+              setTranscript((prev) => [...prev, decoder.decode(value)]);
+            }
+          }
+        }, 5000); // Ringing for 3 seconds before call starts
+      } catch (error) {
+        console.error(error.message);
+      }
+    } else if (stage === "in-progress") {
+      // Transition to completed state
+      setStage("summary");
+      setCallState("completed");
+      setSavedAudioUrl(audioUrl);
+      setSavedTranscript(transcript);
       setAudioUrl(null);
       setTranscript([]);
-      return;
-    }
-
-    // Start call
-    setIsCalling(true);
-    setCallStatus("Connecting to a scammer...");
-    setAudioUrl(null);
-    setTranscript([]);
-
-    try {
-      // Simulate API call to fetch audio and transcript streams
-      const audioResponse = await fetch("/call/audio");
-      const transcriptResponse = await fetch("/call/transcript");
-
-      if (!audioResponse.ok || !transcriptResponse.ok) {
-        throw new Error("Failed to connect to the call service.");
-      }
-
-      const audioBlob = await audioResponse.blob();
-      const transcriptStream = transcriptResponse.body.getReader();
-
-      // Set the audio for playback
-      const audioObjectUrl = URL.createObjectURL(audioBlob);
-      setAudioUrl(audioObjectUrl);
-
-      // Read the transcript stream
-      const decoder = new TextDecoder("utf-8");
-      let done = false;
-      while (!done && isCalling) {
-        const { value, done: streamDone } = await transcriptStream.read();
-        done = streamDone;
-        if (value) {
-          setTranscript((prev) => [...prev, decoder.decode(value)]);
-        }
-      }
-
-      if (isCalling) {
-        setCallStatus("Call in progress...");
-      }
-    } catch (error) {
-      setCallStatus(`Error: ${error.message}`);
+      setCallerVideoUrl(null);
+      setPhoneNumber("");
+    } else if (stage === "summary") {
+      // Reset to idle
+      setStage("idle");
+      setCallState(null);
+      setSavedAudioUrl(null);
+      setSavedTranscript([]);
     }
   };
 
   return (
     <div className="App">
       <header className="App-header">
-        <h1>Scamback</h1>
-        <button className="call-button" onClick={handleCall}>
-          {isCalling ? "🔴 Hang Up" : "📞 Call a Scammer"}
-        </button>
-        <p>{callStatus}</p>
-
-        {audioUrl && (
-          <div className="audio-section">
-            <h2>Call Audio</h2>
-            <audio controls src={audioUrl} />
-          </div>
+        {stage === "idle" && (
+          <>
+            <h1>Scamback</h1>
+            <button className="call-button" onClick={handleCall}>
+              📞 Call a Scammer
+            </button>
+          </>
         )}
 
-        {transcript.length > 0 && (
-          <div className="transcript-section">
-            <h2>Transcript</h2>
-            <div className="transcript-box">
-              {transcript.map((line, index) => (
-                <p key={index}>{line}</p>
-              ))}
+        {stage === "in-progress" && (
+          <>
+            <h1>Call in Progress</h1>
+            <p>Phone Number: {phoneNumber}</p>
+            {callerVideoUrl && (
+              <div className="video-section">
+                <h2>Caller Video</h2>
+                <video autoPlay src={callerVideoUrl} />
+              </div>
+            )}
+            {audioUrl && (
+              <div className="audio-section">
+                <h2>Call Audio</h2>
+                <audio autoPlay src={audioUrl} />
+              </div>
+            )}
+            <div className="transcript-section">
+              <h2>Transcript</h2>
+              <div className="transcript-box">
+                {transcript.map((line, index) => (
+                  <p key={index}>{line}</p>
+                ))}
+              </div>
             </div>
-          </div>
+            <button className="call-button hangup" onClick={handleCall}>
+              <FontAwesomeIcon icon={faPhoneSlash} size="lg" /> Hang Up
+            </button>
+          </>
+        )}
+
+        {stage === "summary" && (
+          <>
+            <h1>Call Summary</h1>
+            <div className="audio-section">
+              <h2>Call Audio</h2>
+              {savedAudioUrl && <audio controls src={savedAudioUrl} />}
+            </div>
+            <div className="transcript-section">
+              <h2>Transcript</h2>
+              <div className="transcript-box">
+                {savedTranscript.map((line, index) => (
+                  <p key={index}>{line}</p>
+                ))}
+              </div>
+            </div>
+            <button className="call-button" onClick={handleCall}>
+              📞 Call Another Scammer
+            </button>
+          </>
         )}
       </header>
     </div>
