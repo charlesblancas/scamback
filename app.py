@@ -1,16 +1,21 @@
 import base64
 import json
 import logging
-
 from flask import Flask
-from flask_sockets import Sockets
+import flask_sockets
+
+HTTP_SERVER_PORT = 5000
+
+# Fix for flask_sockets
+# https://community.plotly.com/t/dash-extensions-websockets-getting-error-when-i-run-examples/54562/4
+def add_url_rule(self, rule, _, f, **options):
+    self.url_map.add(flask_sockets.Rule(rule, endpoint=f, websocket=True))
+flask_sockets.Sockets.add_url_rule = add_url_rule
 
 app = Flask(__name__)
-sockets = Sockets(app)
+sockets = flask_sockets.Sockets(app)
 
-HTTP_SERVER_PORT = 5770
-
-@sockets.route('/media')
+@sockets.route('/media', websocket=True)
 def echo(ws):
     app.logger.info("Connection accepted")
     # A lot of messages will be sent rapidly. We'll stop showing after the first one.
@@ -52,6 +57,6 @@ if __name__ == '__main__':
     from gevent import pywsgi
     from geventwebsocket.handler import WebSocketHandler
 
-    server = pywsgi.WSGIServer(('', HTTP_SERVER_PORT), app, handler_class=WebSocketHandler)
+    server = pywsgi.WSGIServer(('0.0.0.0', HTTP_SERVER_PORT), app, handler_class=WebSocketHandler)
     print("Server listening on: http://localhost:" + str(HTTP_SERVER_PORT))
     server.serve_forever()
