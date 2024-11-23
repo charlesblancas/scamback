@@ -13,9 +13,9 @@ auth_token = os.environ.get("TWILIO_AUTH_TOKEN")
 client = Client(account_sid, auth_token)
 
 call = client.calls.create(
-    url="https://handler.twilio.com/twiml/EH9e1f33f37203a3d2b278e1287ceb0a7a",
-    to="+15148501367",
-    from_="+14388061753",
+    url=os.environ.get("TWIML_URL"),
+    to=os.environ.get("TO_NUMBER"),
+    from_=os.environ.get("FROM_NUMBER"),
 )
 
 print(call.sid)
