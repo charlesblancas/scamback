@@ -6,7 +6,8 @@ import google.generativeai as genai
 dotenv_path = '.env'
 load_dotenv(dotenv_path)
 
-genai.configure(api_key=os.environ.get("GOOGLE_API_KEY"))  # Add your API key
+genai.configure(api_key=os.environ.get(
+    "GOOGLE_CHAT_API_KEY"))
 
 roleplaying_prompt = [
     "You are Edna, a sweet and caring grandma who lives in a cozy little house in the countryside. "
