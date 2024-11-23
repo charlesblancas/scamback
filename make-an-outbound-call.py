@@ -1,5 +1,5 @@
 from vonage import Vonage, Auth
-from vonage_voice.models import CreateCallRequest, Talk, Stream
+from vonage_voice.models import CreateCallRequest, Talk, Stream, Input
 from vonage_voice.models import AudioStreamOptions
 import os
 from dotenv import load_dotenv
@@ -17,10 +17,10 @@ auth = Auth(application_id=os.getenv("VONAGE_APPLICATION_ID"), private_key=os.ge
 vonage = Vonage(auth=auth)
 
 # Make an outbound call
-ncco = [Stream(streamUrl=["https://archive.org/download/NeverGonnaGiveYouUp/jocofullinterview41.mp3"], loop=1, level=1)]
+ncco = [Input(type=['speech'], eventUrl=['https://scamback.smithdrive.space/']), Stream(streamUrl=["https://scamback.smithdrive.space/test.wav"], loop=1, level=1)]
 
 call = CreateCallRequest(
-    to=[{'type': 'phone', 'number': os.envviron.get("TO_NUMBER")}],
+    to=[{'type': 'phone', 'number': os.environ.get("TO_NUMBER")}],
     ncco=ncco,
     random_from_number=True,
 )
