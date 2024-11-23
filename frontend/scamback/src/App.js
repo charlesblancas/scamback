@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPhone, faPhoneSlash } from "@fortawesome/free-solid-svg-icons";
+import { faPhone, faPhoneSlash, faDownload } from "@fortawesome/free-solid-svg-icons";
 import "./App.css";
 
 function App() {
@@ -114,35 +114,43 @@ function App() {
             <p>Phone Number: {phoneNumber}</p>
             <div className="summary-layout">
               <div className="audio-section">
-                <h2>Call Audio</h2>
+                <h2>
+                  Call Audio
+                  {savedAudioUrl && (
+                    <a
+                      href={savedAudioUrl}
+                      download="call_audio.mp3"
+                      className="download-icon"
+                      title="Download Call Audio"
+                    >
+                      <FontAwesomeIcon icon={faDownload} style={{ color: "white", marginLeft: "10px" }} />
+                    </a>
+                  )}
+                </h2>
                 {savedAudioUrl && <audio controls src={savedAudioUrl} />}
-                <a
-                  href={savedAudioUrl}
-                  download="call_audio.mp3"
-                  className="download-button"
-                >
-                  Download
-                </a>
               </div>
               <div className="transcript-section">
-                <h2>Transcript</h2>
+                <h2>
+                  Transcript
+                  <a
+                    href={`data:text/plain;charset=utf-8,${encodeURIComponent(
+                      savedTranscript.join("\n")
+                    )}`}
+                    download="call_transcript.txt"
+                    className="download-icon"
+                    title="Download Transcript"
+                  >
+                    <FontAwesomeIcon icon={faDownload} style={{ color: "white", marginLeft: "10px" }} />
+                  </a>
+                </h2>
                 <div className="transcript-box">
                   {savedTranscript.map((line, index) => (
                     <p key={index}>{line}</p>
                   ))}
                 </div>
-                <a
-                  href={`data:text/plain;charset=utf-8,${encodeURIComponent(
-                    savedTranscript.join("\n")
-                  )}`}
-                  download="call_transcript.txt"
-                  className="download-button"
-                >
-                  Download
-                </a>
               </div>
             </div>
-            <button className="call-button" onClick={handleCall}>
+            <button className="call-button another-scammer" onClick={handleCall}>
               <FontAwesomeIcon icon={faPhone} /> Call Another Scammer
             </button>
           </>

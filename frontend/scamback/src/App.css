@@ -41,6 +41,10 @@ h1 {
   color: white;
 }
 
+.call-button.another-scammer {
+  margin-top: 2rem;
+}
+
 .call-button.large {
   font-size: 2rem;
   padding: 1rem 2rem;
