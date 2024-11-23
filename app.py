@@ -4,7 +4,7 @@ import logging
 from flask import Flask
 import flask_sockets
 
-HTTP_SERVER_PORT = 5000
+HTTP_SERVER_PORT = 5770
 
 # Fix for flask_sockets
 # https://community.plotly.com/t/dash-extensions-websockets-getting-error-when-i-run-examples/54562/4
