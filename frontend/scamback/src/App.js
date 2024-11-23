@@ -13,7 +13,7 @@ function App() {
   const [savedAudioUrl, setSavedAudioUrl] = useState(null);
 
   useEffect(() => {
-    document.title = "Scamback";
+    document.title = "ScamBack";
   }, []);
 
   const handleCall = async () => {
@@ -79,8 +79,9 @@ function App() {
       <header className="App-header">
         {stage === "idle" && (
           <>
-            <h1>Scamback</h1>
-            <button className="call-button" onClick={handleCall}>
+            <img src="/logo.png" alt="Scamback Logo" className="logo" />
+            <h1>ScamBack</h1>
+            <button className="call-button large" onClick={handleCall}>
               <FontAwesomeIcon icon={faPhone} /> Call a Scammer
             </button>
           </>
