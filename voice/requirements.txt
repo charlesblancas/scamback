@@ -1,0 +1,7 @@
+coqui-tts
+Flask
+librosa
+torch
+numpy
+waitress
+scipy

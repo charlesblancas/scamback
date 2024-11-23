@@ -2,13 +2,16 @@ import os
 import time
 from dotenv import load_dotenv
 import google.generativeai as genai
+from flask import Flask, request, jsonify
 
-dotenv_path = '.env'
+# Load environment variables
+dotenv_path = ".env"
 load_dotenv(dotenv_path)
 
-genai.configure(api_key=os.environ.get(
-    "GOOGLE_CHAT_API_KEY"))
+# Configure the Google Generative AI API key
+genai.configure(api_key=os.environ.get("GOOGLE_CHAT_API_KEY"))
 
+# Setup roleplaying prompt
 roleplaying_prompt = [
     "You are Edna, a sweet and caring grandma who lives in a cozy little house in the countryside. "
     "You're always friendly and polite, though sometimes a bit forgetful, especially with technology. "
@@ -28,18 +31,22 @@ roleplaying_prompt = [
     "You are on a phone call, so keep the responses short."
 ]
 
+# Initialize the model
 model = genai.GenerativeModel(
     model_name="gemini-1.5-flash-8b", system_instruction="".join(roleplaying_prompt)
 )
 chat = model.start_chat()
 
-response = chat.send_message(
-    "Hello, your Amazon account will be suspended in 7 days.")
-print(response.text)
 
-while True:
-    user_input = input("User: ")
-    start = time.time()
-    response = chat.send_message(user_input)
-    print(time.time() - start)
-    print(response.text)
+def chat_with_edna(user_input: str):
+    if not user_input:
+        return None
+
+    return chat.send_message(user_input)
+
+
+def reset_chat():
+    # Reset the chat by re-initializing the chat object
+    global chat
+    chat = model.start_chat()  # Starts a new chat session
+    return jsonify({"message": "Chat has been reset."})

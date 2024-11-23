@@ -1,4 +1,5 @@
 from TTS.api import TTS
+from scipy.signal import resample
 import librosa
 import torch
 import numpy as np
@@ -13,6 +14,10 @@ class TTSModel:
     def generate(self, text):
         wav = np.array(self.tts.tts(text=text, speaker=self.speaker))
         return wav, 22050 # audio data, sample rate
+    
+def resample_voice(audio, sr, target_sr):
+    number_of_samples = int(len(audio) * target_sr / sr)
+    return resample(audio, number_of_samples)
 
 def modify_voice(audio, sample_rate, pitch_shift=0.95, speed_change=1.05, add_breathiness=False):
     y_pitch_shifted = librosa.effects.pitch_shift(audio, sr=sample_rate, n_steps=pitch_shift) # Pitch
