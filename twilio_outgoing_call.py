@@ -4,18 +4,20 @@ from twilio.rest import Client
 from dotenv import load_dotenv
 
 dotenv_path = '.env'
-load_dotenv(dotenv_path)
+load_dotenv(dotenv_path, override=True)
 
 # Find your Account SID and Auth Token at twilio.com/console
 # and set the environment variables. See http://twil.io/secure
 account_sid = os.environ.get("TWILIO_ACCOUNT_SID")
 auth_token = os.environ.get("TWILIO_AUTH_TOKEN")
+from_number = os.environ.get("TWILIO_PHONE_NUMBER")
+
 client = Client(account_sid, auth_token)
 
 call = client.calls.create(
     url="https://handler.twilio.com/twiml/EH9e1f33f37203a3d2b278e1287ceb0a7a",
     to="+15148501367",
-    from_="+14388061753",
+    from_=from_number,
 )
 
 print(call.sid)
