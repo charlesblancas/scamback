@@ -2,6 +2,7 @@
 import os
 from twilio.rest import Client
 from dotenv import load_dotenv
+import time
 
 dotenv_path = '.env'
 load_dotenv(dotenv_path)
@@ -18,4 +19,12 @@ call = client.calls.create(
     from_=os.environ.get("FROM_NUMBER"),
 )
 
-print(call.sid)
+call_sid = call.sid
+print(f"Call SID: {call_sid}")
+
+while True:
+    call_status = client.calls(call_sid).fetch()
+    print(f"Call Status: {call_status.status}")
+
+    # Wait for a few seconds before checking again
+    time.sleep(2)
