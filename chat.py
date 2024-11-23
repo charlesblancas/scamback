@@ -28,10 +28,11 @@ roleplaying_prompt = [
     "You are on a phone call, so keep the responses short."
 ]
 
-
 model = genai.GenerativeModel(
-    model_name="gemini-1.5-flash-8b", system_instruction="".join(roleplaying_prompt))
+    model_name="gemini-1.5-flash-8b", system_instruction="".join(roleplaying_prompt)
+)
 chat = model.start_chat()
+
 response = chat.send_message(
     "Hello, your Amazon account will be suspended in 7 days.")
 print(response.text)
