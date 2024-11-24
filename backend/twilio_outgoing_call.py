@@ -5,9 +5,11 @@ from dotenv import load_dotenv
 import time
 from flask import Flask
 from flask import jsonify
+from flask_cors import CORS
 from flask import request
 
 app = Flask(__name__)
+CORS(app)
 
 dotenv_path = '.env'
 load_dotenv(dotenv_path, override=True)
