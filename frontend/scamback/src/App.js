@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPhone, faPhoneSlash, faDownload } from "@fortawesome/free-solid-svg-icons";
+import { useStatusUpdater } from "./useStatusUpdater";
 import "./App.css";
+
+
 
 function App() {
   const [stage, setStage] = useState("idle"); // Stages: idle, summary
@@ -14,50 +17,76 @@ function App() {
 
   const dialingSoundRef = useRef(null); // dialing sound audio element
   const transcriptEndRef = useRef(null); // bottom of the transcript box
+  const status = useStatusUpdater();
 
   useEffect(() => {
     document.title = "ScamBack";
   }, []);
 
+  useEffect(() => {
+    console.log(status)
+    if (status === "queued") {
+      return;
+    } else if (status === "ringing") {
+      return;
+    } else if (status === "in-progress") {
+      setStage("in-progress");
+      setCallState("in-progress");
+      // handleCall();
+    } else if (status === "completed") {
+      setStage("summary");
+      setCallState("completed");
+    //   handleCall();
+    }
+  }, [status]);
+
   const handleCall = async () => {
     if (stage === "idle") {
       setStage("in-progress");
       setCallState("queued");
-      setPhoneNumber("+1-800-" + Math.floor(Math.random() * 900 + 100) + "-" + Math.floor(Math.random() * 9000 + 1000)); 
+      setPhoneNumber("+15148501367"); 
       setTranscript([]);
 
       try {
-        // Simulate a queued state transition
-        setTimeout(() => setCallState("ringing"), 200);
+        const response = await fetch("http://localhost:5785/start_call", {
+          method: "POST",
+          headers: {
+              "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+              to_number: "+15148501367", // Replace with the actual phone number
+          }),
+      });
+      
 
         // Simulate ringing and transition to in-progress
-        setTimeout(async () => {
-          setCallState("in-progress");
+        // setTimeout(async () => {
+          // setCallState("in-progress");
 
-          const audioResponse = await fetch("http://localhost:5000/call/audio");
-          const transcriptResponse = await fetch("http://localhost:5000/call/transcript");
+          // const audioResponse = await fetch("http://localhost:5000/call/audio");
+          // const transcriptResponse = await fetch("http://localhost:5000/call/transcript");
 
-          if (!audioResponse.ok || !transcriptResponse.ok) {
-            throw new Error("Failed to fetch call streams.");
-          }
+          // if (!audioResponse.ok || !transcriptResponse.ok) {
+          //   throw new Error("Failed to fetch call streams.");
+          // }
 
-          const audioBlob = await audioResponse.blob();
-          const transcriptStream = transcriptResponse.body.getReader();
+          // const audioBlob = await audioResponse.blob();
+          // const transcriptStream = transcriptResponse.body.getReader();
 
-          setAudioUrl(URL.createObjectURL(audioBlob));
+          // setAudioUrl(URL.createObjectURL(audioBlob));
 
           // Read and process the transcript
-          const decoder = new TextDecoder("utf-8");
-          let done = false;
-          while (!done) {
-            const { value, done: streamDone } = await transcriptStream.read();
-            done = streamDone;
-            if (value) {
-              const line = decoder.decode(value);
-              setTranscript((prev) => [...prev, line]);
-            }
-          }
-        }, 2000); // Ringing for 200ms before call starts
+          // const decoder = new TextDecoder("utf-8");
+          // let done = false;
+          // while (!done) {
+          //   const { value, done: streamDone } = await transcriptStream.read();
+          //   done = streamDone;
+          //   if (value) {
+          //     const line = decoder.decode(value);
+          //     setTranscript((prev) => [...prev, line]);
+          //   }
+          // }
+        // }, 2000); // Ringing for 200ms before call starts
       } catch (error) {
         console.error(error.message);
       }
@@ -69,6 +98,10 @@ function App() {
       setSavedTranscript(transcript);
       setAudioUrl(null);
       setTranscript([]);
+
+      const response = await fetch("http://localhost:5785/stop_call", {
+        method: "POST",
+    });
     } else if (stage === "summary") {
       // Reset to idle
       setStage("idle");
@@ -205,7 +238,7 @@ function App() {
           </>
         )}
       </header>
-
+      <div className="status">{status}</div>
       <audio ref={dialingSoundRef} loop>
         <source src="/dialing-sound.mp3" type="audio/mp3" />
       </audio>
