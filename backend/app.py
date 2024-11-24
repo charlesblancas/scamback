@@ -14,6 +14,7 @@ import random
 from scipy.io import wavfile
 from scipy.signal import resample
 from flask_socketio import SocketIO, emit, disconnect
+import time
 
 HTTP_SERVER_PORT = 5770
 TTS_SERVER_URL = "http://localhost:5000/tts"
@@ -31,6 +32,7 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 speech2text = None  # To init later as Thread
 sid = None          # To init later
+start_time = time.time()
 active_call = False
 connected_frontend = False
 sound_effects = [os.path.join(SOUND_EFFECTS_FOLDER, f) for f in os.listdir(SOUND_EFFECTS_FOLDER) if os.path.isfile(os.path.join(SOUND_EFFECTS_FOLDER, f))]
@@ -52,7 +54,7 @@ def handle_disconnect():
 
 @sockets.route("/media", websocket=True)
 def echo(ws):
-    global sid, speech2text, active_call
+    global sid, speech2text, active_call, start_time
     if active_call:
         logger.info("A session is already active. Rejecting new connection.")
         ws.close()
@@ -67,6 +69,7 @@ def echo(ws):
     )
     speech2text.start()
 
+    start_time = time.time()
     try:
         while not ws.closed:
             message = ws.receive()
@@ -81,8 +84,7 @@ def echo(ws):
                 decoded_chunk = base64.b64decode(payload)                   # base64 to mulaw
                 raw_decoded_audio = audioop.ulaw2lin(decoded_chunk, 2)      # mulaw to pcm
                 audio_player.add_input_audio_chunk(raw_decoded_audio)
-                if connected_frontend:
-                    socketio.send("audio", {"from": "scammer", "value": base64.b64encode(raw_decoded_audio).decode("utf-8")})
+                send_to_frontend("audio", "scammer", base64.b64encode(raw_decoded_audio).decode("utf-8"))
 
     except Exception as e:
         logger.error(f"Error in WebSocket handling: {e}", exc_info=True)
@@ -96,8 +98,8 @@ def echo(ws):
 
 
 def received_text(received_text, generated_text, ws):
-    socketio.emit("text", {"from": "scammer", "value": received_text})
-    socketio.emit("text", {"from": "ai", "value": generated_text})
+    send_to_frontend("text", "scammer", received_text)
+    send_to_frontend("text", "ai", generated_text)
     logger.info(f"Text2Speech: {generated_text}")
 
     # Randomly play sound effect before speaking
@@ -109,8 +111,7 @@ def received_text(received_text, generated_text, ws):
         if audio.dtype != np.int16:                                             # Convert to int 16
             audio = audio.astype(np.int16)
         clipped_audio = audio[:int(8000 * 1.)]                                  # Clip to 1 second
-        if connected_frontend:
-            socketio.send("audio", {"from": "ai", "value": base64.b64encode(clipped_audio).decode("utf-8")})
+        send_to_frontend("audio", "ai", base64.b64encode(clipped_audio).decode("utf-8"))
         mu_law_chunk = audioop.lin2ulaw(clipped_audio, 2)                       # pcm 16 bit to mulaw
         mu_law_encoded_chunk = base64.b64encode(mu_law_chunk).decode("utf-8")   # mulaw encoded as base64 string
         send_audio(ws, sid, mu_law_encoded_chunk)
@@ -123,8 +124,7 @@ def received_text(received_text, generated_text, ws):
         chunk = response.json()["audio"]
 
         # Encode the audio in x-mulaw format
-        if connected_frontend:
-            socketio.send("audio", {"from": "ai", "value": chunk})
+        send_to_frontend("audio", "ai", chunk)
         decoded_chunk = np.frombuffer(base64.b64decode(chunk), dtype=np.int16)  # base64 string to pcm 16-bit numpy
         mu_law_chunk = audioop.lin2ulaw(decoded_chunk, 2)                       # pcm 16 bit to mulaw
         mu_law_encoded_chunk = base64.b64encode(mu_law_chunk).decode("utf-8")   # mulaw encoded as base64 string
@@ -140,6 +140,16 @@ def send_audio(ws, sid, chunk):
                     "media": {"payload": chunk},
                 }
             )
+        )
+
+def send_to_frontend(event, from_person, value):
+    if connected_frontend:
+        socketio.send(event, 
+            {
+                "from": from_person, 
+                "value": value,
+                "time": time.time() - start_time
+            }
         )
 
 if __name__ == "__main__":
