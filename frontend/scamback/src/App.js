@@ -52,10 +52,11 @@ function App() {
             const { value, done: streamDone } = await transcriptStream.read();
             done = streamDone;
             if (value) {
-              setTranscript((prev) => [...prev, decoder.decode(value)]);
+              const line = decoder.decode(value);
+              setTranscript((prev) => [...prev, line]);
             }
           }
-        }, 3000);
+        }, 2000); // Ringing for 200ms before call starts
       } catch (error) {
         console.error(error.message);
       }
@@ -78,16 +79,33 @@ function App() {
 
   useEffect(() => {
     if (callState === "ringing") {
+      // Play dialing sound on loop when in the ringing state
       if (dialingSoundRef.current) {
         dialingSoundRef.current.play();
       }
     } else {
+      // Stop the dialing sound when not in the ringing state
       if (dialingSoundRef.current) {
         dialingSoundRef.current.pause();
         dialingSoundRef.current.currentTime = 0;
       }
     }
   }, [callState]);
+
+  const processTranscriptLine = (line) => {
+    // Remove "Scammer:" or "You:" prefixes and return color-based formatted lines
+    let processedLine = line;
+    let color = "#fff"; // default
+
+    if (line.startsWith("Scammer:")) {
+      // processedLine = line.replace("Scammer:", "").trim();
+      color = "#61dafb";
+    } //else if (line.startsWith("You:")) {
+      // processedLine = line.replace("You:", "").trim();
+    //   color = "#fff";
+    // }
+    return { text: processedLine, color };
+  };
 
   return (
     <div className="App">
@@ -110,9 +128,14 @@ function App() {
             <div className="transcript-section">
               <h2>Transcript</h2>
               <div className="transcript-box">
-                {transcript.map((line, index) => (
-                  <p key={index}>{line}</p>
-                ))}
+                {transcript.map((line, index) => {
+                  const { text, color } = processTranscriptLine(line);
+                  return (
+                    <p key={index} style={{ color: color }}>
+                      {text}
+                    </p>
+                  );
+                })}
               </div>
             </div>
             <button className="call-button hangup" onClick={handleCall}>
@@ -155,9 +178,14 @@ function App() {
                   </a>
                 </h2>
                 <div className="transcript-box">
-                  {savedTranscript.map((line, index) => (
-                    <p key={index}>{line}</p>
-                  ))}
+                  {savedTranscript.map((line, index) => {
+                    const { text, color } = processTranscriptLine(line);
+                    return (
+                      <p key={index} style={{ color: color }}>
+                        {text}
+                      </p>
+                    );
+                  })}
                 </div>
               </div>
             </div>
