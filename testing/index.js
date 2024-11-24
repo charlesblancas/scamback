@@ -60,7 +60,7 @@ app.get("/call/transcript", (req, res) => {
     "You: Uh, I don’t think I should give that over the phone…",
     "Scammer: I understand your concern, but this is an urgent matter. If you don’t confirm the details, your account might be permanently suspended, and you could lose access to your order and payment methods.",
     "You: I’m not sure. Can you send me something in writing?",
-    "Scammer: We can’t send emails for security reasons. This is the fastest way to resolve the issue. Just confirm your account details, and we’ll help you protect it from further unauthorized charges. I’m here to assist you, [Your Name].",
+    "Scammer: We can’t send emails for security reasons. This is the fastest way to resolve the issue. Just confirm your account details, and we’ll help you protect it from further unauthorized charges. I’m here to assist you, Edna.",
     "You: Sorry, I’m not giving out my information like this. I’ll contact Amazon directly.",
     "Scammer: Wait, don’t hang up! You could lose your account and money if you don’t act fast!",
     "You: Goodbye."
