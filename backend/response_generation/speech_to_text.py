@@ -19,10 +19,11 @@ def start_speech_to_text(audio_player, callback, ws):
         for response in response_gen:
             res = json.loads(response)
             if res["type"] == "final":
+                received_input = "".join([elem["value"] for elem in res["elements"]])
                 ai_response = chat_with_edna(
-                    ("".join([elem["value"] for elem in res["elements"]]))
+                    (received_input)
                 )
-                callback(ai_response.text, ws)
+                callback(received_input, ai_response.text, ws)
 
     except KeyboardInterrupt:
         streamclient.end()

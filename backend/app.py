@@ -2,7 +2,7 @@ import base64
 import json
 import os
 import logging
-from flask import Flask
+from flask import Flask, session
 import flask_sockets
 from response_generation.speech_to_text import start_speech_to_text
 from player import AudioPlayer
@@ -13,7 +13,7 @@ import audioop
 import random
 from scipy.io import wavfile
 from scipy.signal import resample
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO, emit, disconnect
 
 HTTP_SERVER_PORT = 5770
 TTS_SERVER_URL = "http://localhost:5000/tts"
@@ -31,33 +31,34 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 speech2text = None  # To init later as Thread
 sid = None          # To init later
-active_session = False
+active_call = False
+connected_frontend = False
 sound_effects = [os.path.join(SOUND_EFFECTS_FOLDER, f) for f in os.listdir(SOUND_EFFECTS_FOLDER) if os.path.isfile(os.path.join(SOUND_EFFECTS_FOLDER, f))]
-
-# Replace `socketio.Server` with Flask-SocketIO integration
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-# Define namespaces and events
 @socketio.on("connect")
 def handle_connect():
+    global connected_frontend
+    if connected_frontend:
+        disconnect()
     logger.info("Frontend connected")
-    emit("status", {"message": "Connected to WebSocket"})
-
+    connected_frontend = True
 
 @socketio.on("disconnect")
 def handle_disconnect():
+    global connected_frontend
     logger.info("Frontend disconnected")
-
+    connected_frontend = False
 
 @sockets.route("/media", websocket=True)
 def echo(ws):
-    global sid, speech2text, active_session
-    if active_session:
+    global sid, speech2text, active_call
+    if active_call:
         logger.info("A session is already active. Rejecting new connection.")
         ws.close()
         return
     
-    active_session = True
+    active_call = True
     logger.info("New connection accepted")
     audio_player.start_stream()
     audio_player.start_recording()
@@ -80,6 +81,8 @@ def echo(ws):
                 decoded_chunk = base64.b64decode(payload)                   # base64 to mulaw
                 raw_decoded_audio = audioop.ulaw2lin(decoded_chunk, 2)      # mulaw to pcm
                 audio_player.add_input_audio_chunk(raw_decoded_audio)
+                if connected_frontend:
+                    socketio.send("audio", {"from": "scammer", "value": base64.b64encode(raw_decoded_audio).decode("utf-8")})
 
     except Exception as e:
         logger.error(f"Error in WebSocket handling: {e}", exc_info=True)
@@ -89,12 +92,13 @@ def echo(ws):
         audio_player.cleanup()
         if speech2text and speech2text.is_alive():
             speech2text.join()
-        active_session = False
+        active_call = False
 
 
-def received_text(text, ws):
-    socketio.emit("text", {"text": text})
-    logger.info(f"Text2Speech: {text}")
+def received_text(received_text, generated_text, ws):
+    socketio.emit("text", {"from": "scammer", "value": received_text})
+    socketio.emit("text", {"from": "ai", "value": generated_text})
+    logger.info(f"Text2Speech: {generated_text}")
 
     # Randomly play sound effect before speaking
     if random.random() < PROB_SOUND_EFFECT:
@@ -105,18 +109,22 @@ def received_text(text, ws):
         if audio.dtype != np.int16:                                             # Convert to int 16
             audio = audio.astype(np.int16)
         clipped_audio = audio[:int(8000 * 1.)]                                  # Clip to 1 second
+        if connected_frontend:
+            socketio.send("audio", {"from": "ai", "value": base64.b64encode(clipped_audio).decode("utf-8")})
         mu_law_chunk = audioop.lin2ulaw(clipped_audio, 2)                       # pcm 16 bit to mulaw
         mu_law_encoded_chunk = base64.b64encode(mu_law_chunk).decode("utf-8")   # mulaw encoded as base64 string
         send_audio(ws, sid, mu_law_encoded_chunk)
 
     # Call the TTS API here with a post request
-    response = requests.post(TTS_SERVER_URL, json={"text": text})
+    response = requests.post(TTS_SERVER_URL, json={"text": generated_text})
     if response.status_code == 200:
         logger.info("TTS audio received.")
         # Play the audio on the call
         chunk = response.json()["audio"]
 
         # Encode the audio in x-mulaw format
+        if connected_frontend:
+            socketio.send("audio", {"from": "ai", "value": chunk})
         decoded_chunk = np.frombuffer(base64.b64decode(chunk), dtype=np.int16)  # base64 string to pcm 16-bit numpy
         mu_law_chunk = audioop.lin2ulaw(decoded_chunk, 2)                       # pcm 16 bit to mulaw
         mu_law_encoded_chunk = base64.b64encode(mu_law_chunk).decode("utf-8")   # mulaw encoded as base64 string
