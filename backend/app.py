@@ -4,7 +4,7 @@ import logging
 from flask import Flask
 import flask_sockets
 from response_generation.speech_to_text import start_speech_to_text
-from player import AudioPlayer, MuLawDecoder, MuLawEncoder
+from player import AudioPlayer
 from threading import Thread
 import requests
 import numpy as np
@@ -12,12 +12,10 @@ import audioop
 from flask_socketio import SocketIO, emit
 
 HTTP_SERVER_PORT = 5770
-
+TTS_SERVER_URL = "http://localhost:5000/tts"
 
 def add_url_rule(self, rule, _, f, **options):
     self.url_map.add(flask_sockets.Rule(rule, endpoint=f, websocket=True))
-
-
 flask_sockets.Sockets.add_url_rule = add_url_rule
 
 app = Flask(__name__)
@@ -26,14 +24,11 @@ audio_player = AudioPlayer()
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 speech2text = None  # To init later as Thread
-
-decoder = MuLawDecoder()
-encoder = MuLawEncoder()
-sid = None
+sid = None          # To init later
+active_session = False
 
 # Replace `socketio.Server` with Flask-SocketIO integration
 socketio = SocketIO(app, cors_allowed_origins="*")
-
 
 # Define namespaces and events
 @socketio.on("connect")
@@ -49,8 +44,13 @@ def handle_disconnect():
 
 @sockets.route("/media", websocket=True)
 def echo(ws):
-    global sid
-    logger.info("WebSocket connection accepted")
+    global sid, speech2text, active_session
+    if active_session:
+        logger.info("A session is already active. Rejecting new connection.")
+        ws.close()
+        return
+    
+    logger.info("New connection accepted")
     audio_player.start_stream()
     audio_player.start_recording()
     speech2text = Thread(
@@ -69,44 +69,46 @@ def echo(ws):
             if data["event"] == "media":
                 payload = data["media"]["payload"]
                 sid = data["streamSid"]
-                chunk = base64.b64decode(payload)
-                audio_player.add_input_audio_chunk(decoder.decode(chunk))
+                decoded_chunk = base64.b64decode(payload)                   # base64 to mulaw
+                raw_decoded_audio = audioop.ulaw2lin(decoded_chunk, 2)      # mulaw to pcm
+                audio_player.add_input_audio_chunk(raw_decoded_audio)
 
     except Exception as e:
         logger.error(f"Error in WebSocket handling: {e}", exc_info=True)
     finally:
+        logger.info(f"Session closed. Cleaning up.")
         audio_player.stop_recording()
-        logger.info(f"Connection closed.")
+        audio_player.cleanup()
+        if speech2text and speech2text.is_alive():
+            speech2text.join()
 
 
 def received_text(text, ws):
     socketio.emit("text", {"text": text})
     logger.info(f"Text2Speech: {text}")
+
     # Call the TTS API here with a post request
-    tts_url = "http://b5s9h9yys0.sharedwithexpose.com/tts"
-    response = requests.post(tts_url, json={"text": text})
+    response = requests.post(TTS_SERVER_URL, json={"text": text})
     if response.status_code == 200:
-        logger.info("TTS API response 200 received")
+        logger.info("TTS audio received.")
         # Play the audio on the call
         chunk = response.json()["audio"]
 
         # Encode the audio in x-mulaw format
-        decoded_chunk = np.frombuffer(
-            base64.b64decode(chunk), dtype=np.int16
-        )  # Base64 string to pcm 16-bit numpy
-        mu_law_chunk = audioop.lin2ulaw(decoded_chunk, 2)
-        mu_law_encoded_chunk = base64.b64encode(mu_law_chunk).decode("utf-8")
+        decoded_chunk = np.frombuffer(base64.b64decode(chunk), dtype=np.int16)  # base64 string to pcm 16-bit numpy
+        mu_law_chunk = audioop.lin2ulaw(decoded_chunk, 2)                       # pcm 16 bit to mulaw
+        mu_law_encoded_chunk = base64.b64encode(mu_law_chunk).decode("utf-8")   # mulaw encoded as base64 string
 
-        ws.send(
-            json.dumps(
-                {
-                    "event": "media",
-                    "streamSid": sid,
-                    "media": {"payload": mu_law_encoded_chunk},
-                }
+        if not ws.closed:
+            ws.send(
+                json.dumps(
+                    {
+                        "event": "media",
+                        "streamSid": sid,
+                        "media": {"payload": mu_law_encoded_chunk},
+                    }
+                )
             )
-        )
-
 
 if __name__ == "__main__":
     try:
@@ -122,4 +124,5 @@ if __name__ == "__main__":
         logger.error(f"Server error: {e}", exc_info=True)
     finally:
         audio_player.cleanup()
-        speech2text.join()
+        if speech2text and speech2text.is_alive():
+            speech2text.join()

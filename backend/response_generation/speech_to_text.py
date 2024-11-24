@@ -9,22 +9,13 @@ load_dotenv(".env")
 access_token = os.environ.get("REV_AI_TOKEN")
 
 def start_speech_to_text(audio_player, callback, ws):
-    """
-    Creates a media config with the settings set for a raw microphone input
-    """
-    example_mc = MediaConfig("audio/x-raw", "interleaved", 8000, "S16LE", 1)
+    mc = MediaConfig("audio/x-raw", "interleaved", 8000, "S16LE", 1)
 
-    streamclient = RevAiStreamingClient(access_token, example_mc)
+    streamclient = RevAiStreamingClient(access_token, mc)
 
     try:
-        """
-        Starts the server connection and thread sending microphone audio
-        """
         response_gen = streamclient.start(audio_player.generator())
 
-        """
-        Iterates through responses and prints them
-        """
         for response in response_gen:
             res = json.loads(response)
             if res["type"] == "final":
@@ -34,8 +25,4 @@ def start_speech_to_text(audio_player, callback, ws):
                 callback(ai_response.text, ws)
 
     except KeyboardInterrupt:
-        """
-        Ends the WebSocket connection.
-        """
         streamclient.end()
-        pass

@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 import google.generativeai as genai
 from flask import Flask, request, jsonify
 import random
-from personas import personas
+from .personas import personas
 
 # Load environment variables
 dotenv_path = ".env"
