@@ -1,3 +1,5 @@
 .env
 *.key
 .DS_Store
+/frontend/scamback/package-lock.json
+/frontend/scamback/package.json
