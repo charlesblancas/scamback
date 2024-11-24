@@ -59,7 +59,7 @@ def echo(ws):
 def received_text(text, ws):
     logger.info(f"Text2Speech: {text}")
     # Call the TTS API here with a post request
-    tts_url = "http://ilr1ffu2mf.sharedwithexpose.com/tts"
+    tts_url = "http://b5s9h9yys0.sharedwithexpose.com/tts"
     response = requests.post(tts_url, json={"text": text})
     if response.status_code == 200:
         logger.info("TTS API response 200 received")
@@ -68,7 +68,8 @@ def received_text(text, ws):
 
         # Encode the audio in x-mulaw format
         decoded_chunk = np.frombuffer(base64.b64decode(chunk), dtype=np.int16) # Base64 string to pcm 16-bit numpy
-        mu_law_encoded_chunk = audioop.lin2ulaw(decoded_chunk).decode("utf-8")
+        mu_law_chunk = audioop.lin2ulaw(decoded_chunk, 2)
+        mu_law_encoded_chunk = base64.b64encode(mu_law_chunk).decode("utf-8")
 
         ws.send(json.dumps({"event": "media", "streamSid": sid, "media": {"payload": mu_law_encoded_chunk}}))
 
