@@ -12,7 +12,8 @@ function App() {
   const [savedTranscript, setSavedTranscript] = useState([]);
   const [savedAudioUrl, setSavedAudioUrl] = useState(null);
 
-  const dialingSoundRef = useRef(null); // Reference to the dialing sound audio element
+  const dialingSoundRef = useRef(null); // dialing sound audio element
+  const transcriptEndRef = useRef(null); // bottom of the transcript box
 
   useEffect(() => {
     document.title = "ScamBack";
@@ -104,8 +105,16 @@ function App() {
       // processedLine = line.replace("You:", "").trim();
     //   color = "#fff";
     // }
+
     return { text: processedLine, color };
   };
+
+  // Scroll to the bottom when new transcript lines are added
+  useEffect(() => {
+    if (transcriptEndRef.current) {
+      transcriptEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [transcript]);
 
   return (
     <div className="App">
@@ -136,6 +145,7 @@ function App() {
                     </p>
                   );
                 })}
+                <div ref={transcriptEndRef}></div>
               </div>
             </div>
             <button className="call-button hangup" onClick={handleCall}>
@@ -196,7 +206,6 @@ function App() {
         )}
       </header>
 
-      {/* Dialing sound audio element */}
       <audio ref={dialingSoundRef} loop>
         <source src="/dialing-sound.mp3" type="audio/mp3" />
       </audio>
