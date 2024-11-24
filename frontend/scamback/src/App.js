@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPhone, faPhoneSlash, faDownload } from "@fortawesome/free-solid-svg-icons";
 import { useStatusUpdater } from "./useStatusUpdater";
 import "./App.css";
-
+import AudioStream from "./AudioStream";
 
 
 function App() {
@@ -57,8 +57,7 @@ function App() {
               to_number: "+15148501367", // Replace with the actual phone number
           }),
       });
-      
-
+    
         // Simulate ringing and transition to in-progress
         // setTimeout(async () => {
           // setCallState("in-progress");
@@ -101,7 +100,7 @@ function App() {
 
       const response = await fetch("http://localhost:5785/stop_call", {
         method: "POST",
-    });
+      });
     } else if (stage === "summary") {
       // Reset to idle
       setStage("idle");
@@ -151,6 +150,7 @@ function App() {
 
   return (
     <div className="App">
+      <AudioStream url="http://localhost:5770/" transcript={transcript} setTranscript={setTranscript} />
       <header className="App-header">
         {stage === "idle" && (
           <>

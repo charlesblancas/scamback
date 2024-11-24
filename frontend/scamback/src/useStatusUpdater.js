@@ -11,7 +11,7 @@ export const useStatusUpdater = () => {
           if (!response.ok) {
             throw new Error("Failed to fetch status");
           }
-          console.log(response)
+          // console.log(response)
           const data = await response.json();
           setStatus(data["status"]);
         } catch (error) {
@@ -20,7 +20,7 @@ export const useStatusUpdater = () => {
         }
       };
   
-      const intervalId = setInterval(fetchStatus, 1000);
+      const intervalId = setInterval(fetchStatus, 300);
   
       return () => clearInterval(intervalId);
     }, []);
