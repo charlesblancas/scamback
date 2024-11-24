@@ -23,7 +23,7 @@ function App() {
     if (stage === "idle") {
       setStage("in-progress");
       setCallState("queued");
-      setPhoneNumber("+1-800-314-5421"); // Example: Dynamic number from API
+      setPhoneNumber("+1-800-" + Math.floor(Math.random() * 900 + 100) + "-" + Math.floor(Math.random() * 9000 + 1000)); 
       setTranscript([]);
 
       try {
