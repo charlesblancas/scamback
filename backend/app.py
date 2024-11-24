@@ -8,6 +8,7 @@ from player import AudioPlayer, MuLawDecoder, MuLawEncoder
 from threading import Thread
 import requests
 import numpy as np
+import audioop
 
 HTTP_SERVER_PORT = 5770
 
@@ -67,9 +68,9 @@ def received_text(text, ws):
 
         # Encode the audio in x-mulaw format
         decoded_chunk = np.frombuffer(base64.b64decode(chunk), dtype=np.int16) # Base64 string to pcm 16-bit numpy
-        mu_law_encoded_chunk = encoder.encode_array(decoded_chunk) # pcm 16-bit to mulaw
-        chunk_to_send = base64.b64encode(mu_law_encoded_chunk).decode("utf-8") # mulaw to base64 string
-        ws.send(json.dumps({"event": "media", "streamSid": sid, "media": {"payload": chunk_to_send}}))
+        mu_law_encoded_chunk = audioop.lin2ulaw(decoded_chunk).decode("utf-8")
+
+        ws.send(json.dumps({"event": "media", "streamSid": sid, "media": {"payload": mu_law_encoded_chunk}}))
 
 if __name__ == '__main__':
     try:
