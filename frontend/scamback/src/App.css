@@ -126,8 +126,90 @@ h1 {
   color: #282c34;
 }
 
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0);
+    /* Start and end positions */
+  }
+
+  50% {
+    transform: translateY(-10px);
+    /* Midway float up */
+  }
+}
+
 .logo {
-  width: 200px;
+  width: 600px;
   height: auto;
   margin-bottom: 1rem;
+  animation: float 6s ease-in-out infinite;
+  /* Smooth animation */
+  display: inline-block;
+  /* Ensures the element respects dimensions */
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  position: relative;
+  /* Allows animation to be relative to the element */
+}
+
+.call-button {
+  transition: transform 0.2s ease-in-out, background-color 0.3s;
+}
+
+.call-button:hover {
+  transform: scale(1.1);
+  /* Slightly enlarge the button */
+  /* Change the background color on hover */
+}
+
+
+/* Make the transcript box slide in*/
+@keyframes slideIn {
+  0% {
+    transform: translateX(70%);
+    opacity: 0;
+  }
+
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.transcript-box {
+  animation: slideIn 0.5s ease-out;
+}
+
+/* Typing effect for transcript box */
+
+.transcript-box p {
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+  width: 0;
+  animation: typing 1.5s steps(30) forwards;
+}
+
+@keyframes typing {
+  100% {
+    width: 100%;
+  }
+}
+
+
+@keyframes gradientBackground {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
 }
