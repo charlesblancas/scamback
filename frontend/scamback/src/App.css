@@ -185,19 +185,19 @@ h1 {
 
 /* Typing effect for transcript box */
 
-.transcript-box p {
+/* .transcript-box p {
   display: inline-block;
   overflow: hidden;
   white-space: nowrap;
   width: 0;
   animation: typing 1.5s steps(30) forwards;
-}
+} */
 
-@keyframes typing {
+/* @keyframes typing {
   100% {
     width: 100%;
   }
-}
+} */
 
 
 @keyframes gradientBackground {

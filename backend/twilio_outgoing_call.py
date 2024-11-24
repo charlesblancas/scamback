@@ -3,7 +3,7 @@ import os
 from twilio.rest import Client
 from dotenv import load_dotenv
 import time
-from flask import Flask
+from flask import Flask, send_file
 from flask import jsonify
 from flask_cors import CORS
 from flask import request
@@ -80,7 +80,15 @@ def call_status():
     except Exception as e:
         print(f"Error: {e}")
         return jsonify({"error": str(e)}), 500
-        
+
+@app.route('/audio', methods=['GET'])
+def get_audio():
+    try:
+        # Serve the file
+        return send_file(f"call_audio.wav", as_attachment=False)
+    except FileNotFoundError:
+        return {"error": "File not found"}, 404
+    
 
 if __name__ == "__main__":
     app.run(port=5785)

@@ -4,6 +4,7 @@ from datetime import datetime
 import pyaudio
 import logging
 import wave
+import shutil
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -70,7 +71,7 @@ class AudioPlayer:
             return
             
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"recording_{timestamp}.wav"
+        filename = f"recordings/recording_{timestamp}.wav"
         
         try:
             with wave.open(filename, 'wb') as wf:
@@ -80,6 +81,9 @@ class AudioPlayer:
                 wf.writeframes(b''.join(self.recorded_frames))
             
             logger.info(f"Recording saved successfully to {filename}")
+
+            shutil.copyfile(filename, "call_audio.wav")
+            
         except Exception as e:
             logger.error(f"Error saving recording: {e}")
         

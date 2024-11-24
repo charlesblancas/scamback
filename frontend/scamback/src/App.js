@@ -5,7 +5,7 @@ import { useStatusUpdater } from "./useStatusUpdater";
 import "./App.css";
 import CallInterface from "./CallInterface";
 
-const PHONE_NUMBER = "+14388305880"
+const PHONE_NUMBER = "+15148501367"
 const URL_CALL_API = "http://localhost:5785"
 
 function App() {
@@ -35,9 +35,11 @@ function App() {
       setCallState("in-progress");
       // handleCall();
     } else if (status === "completed") {
-      setStage("summary");
-      setCallState("completed");
-      setSavedTranscript(transcript);
+      setTimeout( () => {
+        setStage("summary");
+        setCallState("completed");
+        setSavedTranscript(transcript);
+      }, 2000)
     }
   }, [status]);
 
@@ -62,17 +64,21 @@ function App() {
         console.error(error.message);
       }
     } else if (stage === "in-progress") {
-      // Transition to completed state
-      setStage("summary");
-      setCallState("completed");
-      setSavedAudioUrl(audioUrl);
-      setSavedTranscript(transcript);
-      setAudioUrl(null);
-      setTranscript([]);
+
 
       const response = await fetch(URL_CALL_API + "/stop_call", {
         method: "POST",
       });
+
+      setTimeout( () => {
+              // Transition to completed state
+        setStage("summary");
+        setCallState("completed");
+        setSavedAudioUrl(audioUrl);
+        setSavedTranscript(transcript);
+        setAudioUrl(null);
+        setTranscript([]);
+      }, 2000)
 
     } else if (stage === "summary") {
       // Reset to idle
@@ -174,7 +180,8 @@ function App() {
                     </a>
                   )}
                 </h2>
-                {savedAudioUrl && <audio controls src={savedAudioUrl} />}
+                {/* {savedAudioUrl && <audio controls src={savedAudioUrl} />} */}
+                <audio controls src="http://localhost:5785/audio" type="audio/wav" />
               </div>
               <div className="transcript-section">
                 <h2>
