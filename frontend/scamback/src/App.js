@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPhone, faPhoneSlash, faDownload } from "@fortawesome/free-solid-svg-icons";
 import "./App.css";
@@ -11,6 +11,8 @@ function App() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [savedTranscript, setSavedTranscript] = useState([]);
   const [savedAudioUrl, setSavedAudioUrl] = useState(null);
+
+  const dialingSoundRef = useRef(null); // Reference to the dialing sound audio element
 
   useEffect(() => {
     document.title = "ScamBack";
@@ -43,7 +45,7 @@ function App() {
 
           setAudioUrl(URL.createObjectURL(audioBlob));
 
-          // Read and display transcript
+          // Read and process the transcript
           const decoder = new TextDecoder("utf-8");
           let done = false;
           while (!done) {
@@ -53,7 +55,7 @@ function App() {
               setTranscript((prev) => [...prev, decoder.decode(value)]);
             }
           }
-        }, 2000); // Ringing for 200ms before call starts
+        }, 3000);
       } catch (error) {
         console.error(error.message);
       }
@@ -74,6 +76,19 @@ function App() {
     }
   };
 
+  useEffect(() => {
+    if (callState === "ringing") {
+      if (dialingSoundRef.current) {
+        dialingSoundRef.current.play();
+      }
+    } else {
+      if (dialingSoundRef.current) {
+        dialingSoundRef.current.pause();
+        dialingSoundRef.current.currentTime = 0;
+      }
+    }
+  }, [callState]);
+
   return (
     <div className="App">
       <header className="App-header">
@@ -91,9 +106,7 @@ function App() {
           <>
             <h1>Call in Progress</h1>
             <p>Phone Number: {phoneNumber}</p>
-            {audioUrl && (
-              <audio autoPlay src={audioUrl} />
-            )}
+            {audioUrl && <audio autoPlay src={audioUrl} />}
             <div className="transcript-section">
               <h2>Transcript</h2>
               <div className="transcript-box">
@@ -133,9 +146,7 @@ function App() {
                 <h2>
                   Transcript
                   <a
-                    href={`data:text/plain;charset=utf-8,${encodeURIComponent(
-                      savedTranscript.join("\n")
-                    )}`}
+                    href={`data:text/plain;charset=utf-8,${encodeURIComponent(savedTranscript.join("\n"))}`}
                     download="call_transcript.txt"
                     className="download-icon"
                     title="Download Transcript"
@@ -156,6 +167,11 @@ function App() {
           </>
         )}
       </header>
+
+      {/* Dialing sound audio element */}
+      <audio ref={dialingSoundRef} loop>
+        <source src="/dialing-sound.mp3" type="audio/mp3" />
+      </audio>
     </div>
   );
 }

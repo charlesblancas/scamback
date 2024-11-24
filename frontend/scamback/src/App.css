@@ -126,7 +126,15 @@ h1 {
 }
 
 .logo {
-  width: 200px; /* Adjust size as needed */
+  width: 200px;
   height: auto;
-  margin-bottom: 1rem; /* Space between logo and title */
+  margin-bottom: 1rem;
+}
+
+.scammer-line {
+  color: #ff4d4f;
+}
+
+.you-line {
+  color: #61dafb;
 }
