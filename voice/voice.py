@@ -7,7 +7,7 @@ import numpy as np
 class TTSModel:
     def __init__(self):
         self.model_name = "tts_models/en/vctk/vits"
-        self.speaker = "p227"
+        self.speaker = "p343"
         device = "cuda" if torch.cuda.is_available() else "cpu"
         self.tts = TTS(model_name=self.model_name, progress_bar=False).to(device)
 
