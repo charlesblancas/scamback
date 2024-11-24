@@ -3,8 +3,10 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPhone, faPhoneSlash, faDownload } from "@fortawesome/free-solid-svg-icons";
 import { useStatusUpdater } from "./useStatusUpdater";
 import "./App.css";
-import AudioStream from "./AudioStream";
+import CallInterface from "./CallInterface";
 
+const PHONE_NUMBER = "+14388305880"
+const URL_CALL_API = "http://localhost:5785"
 
 function App() {
   const [stage, setStage] = useState("idle"); // Stages: idle, summary
@@ -24,7 +26,6 @@ function App() {
   }, []);
 
   useEffect(() => {
-    console.log(status)
     if (status === "queued") {
       return;
     } else if (status === "ringing") {
@@ -36,7 +37,7 @@ function App() {
     } else if (status === "completed") {
       setStage("summary");
       setCallState("completed");
-    //   handleCall();
+      setSavedTranscript(transcript);
     }
   }, [status]);
 
@@ -44,48 +45,19 @@ function App() {
     if (stage === "idle") {
       setStage("in-progress");
       setCallState("queued");
-      setPhoneNumber("+15148501367"); 
+      setPhoneNumber(PHONE_NUMBER); 
       setTranscript([]);
-
       try {
-        const response = await fetch("http://localhost:5785/start_call", {
+        const response = await fetch(URL_CALL_API + "/start_call", {
           method: "POST",
           headers: {
               "Content-Type": "application/json",
           },
           body: JSON.stringify({
-              to_number: "+15148501367", // Replace with the actual phone number
+              to_number: PHONE_NUMBER, // Replace with the actual phone number
           }),
       });
     
-        // Simulate ringing and transition to in-progress
-        // setTimeout(async () => {
-          // setCallState("in-progress");
-
-          // const audioResponse = await fetch("http://localhost:5000/call/audio");
-          // const transcriptResponse = await fetch("http://localhost:5000/call/transcript");
-
-          // if (!audioResponse.ok || !transcriptResponse.ok) {
-          //   throw new Error("Failed to fetch call streams.");
-          // }
-
-          // const audioBlob = await audioResponse.blob();
-          // const transcriptStream = transcriptResponse.body.getReader();
-
-          // setAudioUrl(URL.createObjectURL(audioBlob));
-
-          // Read and process the transcript
-          // const decoder = new TextDecoder("utf-8");
-          // let done = false;
-          // while (!done) {
-          //   const { value, done: streamDone } = await transcriptStream.read();
-          //   done = streamDone;
-          //   if (value) {
-          //     const line = decoder.decode(value);
-          //     setTranscript((prev) => [...prev, line]);
-          //   }
-          // }
-        // }, 2000); // Ringing for 200ms before call starts
       } catch (error) {
         console.error(error.message);
       }
@@ -98,15 +70,16 @@ function App() {
       setAudioUrl(null);
       setTranscript([]);
 
-      const response = await fetch("http://localhost:5785/stop_call", {
+      const response = await fetch(URL_CALL_API + "/stop_call", {
         method: "POST",
       });
+
     } else if (stage === "summary") {
       // Reset to idle
       setStage("idle");
       setCallState(null);
       setSavedAudioUrl(null);
-      setSavedTranscript([]);
+      setSavedTranscript(transcript);
     }
   };
 
@@ -126,17 +99,12 @@ function App() {
   }, [callState]);
 
   const processTranscriptLine = (line) => {
-    // Remove "Scammer:" or "You:" prefixes and return color-based formatted lines
     let processedLine = line;
     let color = "#fff"; // default
 
     if (line.startsWith("Scammer:")) {
-      // processedLine = line.replace("Scammer:", "").trim();
       color = "#61dafb";
-    } //else if (line.startsWith("You:")) {
-      // processedLine = line.replace("You:", "").trim();
-    //   color = "#fff";
-    // }
+    }
 
     return { text: processedLine, color };
   };
@@ -150,7 +118,7 @@ function App() {
 
   return (
     <div className="App">
-      <AudioStream url="http://localhost:5770/" transcript={transcript} setTranscript={setTranscript} />
+      <CallInterface transcript={transcript} setTranscript={setTranscript}/>
       <header className="App-header">
         {stage === "idle" && (
           <>
