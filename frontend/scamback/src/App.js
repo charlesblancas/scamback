@@ -4,9 +4,14 @@ import { faPhone, faPhoneSlash, faDownload } from "@fortawesome/free-solid-svg-i
 import { useStatusUpdater } from "./useStatusUpdater";
 import "./App.css";
 import CallInterface from "./CallInterface";
+import { numbers } from "./phone_numbers";
 
-const PHONE_NUMBER = "+15148501367"
 const URL_CALL_API = "http://localhost:5785"
+
+const getRandomNumber = () => {
+  const randomIndex = Math.floor(Math.random() * numbers.length);
+  return numbers[randomIndex];
+}
 
 function App() {
   const [stage, setStage] = useState("idle"); // Stages: idle, summary
@@ -45,9 +50,10 @@ function App() {
 
   const handleCall = async () => {
     if (stage === "idle") {
+      let number = getRandomNumber();
       setStage("in-progress");
       setCallState("queued");
-      setPhoneNumber(PHONE_NUMBER); 
+      setPhoneNumber(number); 
       setTranscript([]);
       try {
         const response = await fetch(URL_CALL_API + "/start_call", {
@@ -56,7 +62,7 @@ function App() {
               "Content-Type": "application/json",
           },
           body: JSON.stringify({
-              to_number: PHONE_NUMBER, // Replace with the actual phone number
+              to_number: number, // Replace with the actual phone number
           }),
       });
     
