@@ -1,5 +1,6 @@
 import base64
 import json
+import os
 import logging
 from flask import Flask
 import flask_sockets
@@ -9,10 +10,15 @@ from threading import Thread
 import requests
 import numpy as np
 import audioop
+import random
+from scipy.io import wavfile
+from scipy.signal import resample
 from flask_socketio import SocketIO, emit
 
 HTTP_SERVER_PORT = 5770
 TTS_SERVER_URL = "http://localhost:5000/tts"
+PROB_SOUND_EFFECT = 0.3
+SOUND_EFFECTS_FOLDER = "./sound_effects"
 
 def add_url_rule(self, rule, _, f, **options):
     self.url_map.add(flask_sockets.Rule(rule, endpoint=f, websocket=True))
@@ -26,6 +32,7 @@ logger = logging.getLogger(__name__)
 speech2text = None  # To init later as Thread
 sid = None          # To init later
 active_session = False
+sound_effects = [os.path.join(SOUND_EFFECTS_FOLDER, f) for f in os.listdir(SOUND_EFFECTS_FOLDER) if os.path.isfile(os.path.join(SOUND_EFFECTS_FOLDER, f))]
 
 # Replace `socketio.Server` with Flask-SocketIO integration
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -50,6 +57,7 @@ def echo(ws):
         ws.close()
         return
     
+    active_session = True
     logger.info("New connection accepted")
     audio_player.start_stream()
     audio_player.start_recording()
@@ -81,11 +89,25 @@ def echo(ws):
         audio_player.cleanup()
         if speech2text and speech2text.is_alive():
             speech2text.join()
+        active_session = False
 
 
 def received_text(text, ws):
     socketio.emit("text", {"text": text})
     logger.info(f"Text2Speech: {text}")
+
+    # Randomly play sound effect before speaking
+    if random.random() < PROB_SOUND_EFFECT:
+        sound_effect_file = random.choice(sound_effects)
+        sample_rate, audio = wavfile.read(sound_effect_file)
+        number_of_samples = int(len(audio) * 8000 / sample_rate)                # Convert to 8 Khz sample rate
+        audio = resample(audio, number_of_samples)
+        if audio.dtype != np.int16:                                             # Convert to int 16
+            audio = audio.astype(np.int16)
+        clipped_audio = audio[:int(8000 * 1.)]                                  # Clip to 1 second
+        mu_law_chunk = audioop.lin2ulaw(clipped_audio, 2)                       # pcm 16 bit to mulaw
+        mu_law_encoded_chunk = base64.b64encode(mu_law_chunk).decode("utf-8")   # mulaw encoded as base64 string
+        send_audio(ws, sid, mu_law_encoded_chunk)
 
     # Call the TTS API here with a post request
     response = requests.post(TTS_SERVER_URL, json={"text": text})
@@ -98,17 +120,19 @@ def received_text(text, ws):
         decoded_chunk = np.frombuffer(base64.b64decode(chunk), dtype=np.int16)  # base64 string to pcm 16-bit numpy
         mu_law_chunk = audioop.lin2ulaw(decoded_chunk, 2)                       # pcm 16 bit to mulaw
         mu_law_encoded_chunk = base64.b64encode(mu_law_chunk).decode("utf-8")   # mulaw encoded as base64 string
+        send_audio(ws, sid, mu_law_encoded_chunk)
 
-        if not ws.closed:
-            ws.send(
-                json.dumps(
-                    {
-                        "event": "media",
-                        "streamSid": sid,
-                        "media": {"payload": mu_law_encoded_chunk},
-                    }
-                )
+def send_audio(ws, sid, chunk):
+    if not ws.closed:
+        ws.send(
+            json.dumps(
+                {
+                    "event": "media",
+                    "streamSid": sid,
+                    "media": {"payload": chunk},
+                }
             )
+        )
 
 if __name__ == "__main__":
     try:
